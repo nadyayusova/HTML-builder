@@ -22,13 +22,15 @@ const htmlFileName = 'index.html';
 const componentFilesContent = {};
 
 async function getFiles(dir) {
-  const dirContent = await fsPromise.readdir(dir, {withFileTypes: true});
+  const dirContent = await fsPromise.readdir(dir, { withFileTypes: true });
 
-  const files = await Promise.all(dirContent.map((item) => {
-    const res = path.join(dir, item.name);
+  const files = await Promise.all(
+    dirContent.map((item) => {
+      const res = path.join(dir, item.name);
 
-    return item.isDirectory() ? getFiles(res) : res;
-  }));
+      return item.isDirectory() ? getFiles(res) : res;
+    }),
+  );
 
   return files.flat();
 }
@@ -38,55 +40,78 @@ async function getFiles(dir) {
 // 3. Make styles bundle, place into project directory
 // 4. Make html file from template, place into project directory
 
-fsPromise.rm(projectDir, {recursive: true, force: true})
+fsPromise
+  .rm(projectDir, { recursive: true, force: true })
   .then(() => {
-    fsPromise.mkdir(toAssetsDir, {recursive: true})
+    fsPromise
+      .mkdir(toAssetsDir, { recursive: true })
       .then(() => getFiles(fromAssetsDir))
       .then((files) => {
         files.forEach((file) => {
-          const copyFullPath = file.replace(`${fromAssetsDir}`, `${toAssetsDir}`);
+          const copyFullPath = file.replace(
+            `${fromAssetsDir}`,
+            `${toAssetsDir}`,
+          );
 
-          fsPromise.mkdir(path.parse(copyFullPath).dir, {recursive: true})
+          fsPromise
+            .mkdir(path.parse(copyFullPath).dir, { recursive: true })
             .then(() => fsPromise.copyFile(file, copyFullPath))
             .catch((err) => console.log(err));
         });
       });
   })
   .then(() => {
-    fsPromise.readdir(stylesDir)
+    fsPromise
+      .readdir(stylesDir)
       .then((files) => {
-        return Promise.all(files.map((file) => {
-          if (path.extname(file) === '.css') {
-            return fsPromise.readFile(path.join(stylesDir, file), 'utf-8')
-              .then((data) => styleFilesContent.push(data));
-          }
-        }));
+        return Promise.all(
+          files.map((file) => {
+            if (path.extname(file) === '.css') {
+              return fsPromise
+                .readFile(path.join(stylesDir, file), 'utf-8')
+                .then((data) => styleFilesContent.push(data));
+            }
+          }),
+        );
       })
       .then(() => {
         const bundleFullPath = path.join(projectDir, bundleFileName);
         const bundleContent = styleFilesContent.join(' ');
 
         fsPromise.writeFile(bundleFullPath, bundleContent);
-      })
+      });
   })
   .then(() => {
-    fsPromise.readdir(componentsDir)
+    fsPromise
+      .readdir(componentsDir)
       .then((files) => {
-        return Promise.all(files.map((file) => {
-          if (path.extname(file) === '.html') {
-            return fsPromise.readFile(path.join(componentsDir, file), 'utf-8')
-              .then((data) => componentFilesContent[path.parse(file).name] = data);
-          }
-        }));
+        return Promise.all(
+          files.map((file) => {
+            if (path.extname(file) === '.html') {
+              return fsPromise
+                .readFile(path.join(componentsDir, file), 'utf-8')
+                .then(
+                  (data) =>
+                    (componentFilesContent[path.parse(file).name] = data),
+                );
+            }
+          }),
+        );
       })
       .then(() => {
-        return fsPromise.readFile(path.join(__dirname, htmlTemplateFileName), 'utf-8');
+        return fsPromise.readFile(
+          path.join(__dirname, htmlTemplateFileName),
+          'utf-8',
+        );
       })
       .then((data) => {
         let htmlContent = data;
 
         Object.keys(componentFilesContent).forEach((item) => {
-          htmlContent = htmlContent.replace(`{{${item}}}`, componentFilesContent[item]);
+          htmlContent = htmlContent.replace(
+            `{{${item}}}`,
+            componentFilesContent[item],
+          );
         });
 
         return htmlContent;
@@ -95,6 +120,6 @@ fsPromise.rm(projectDir, {recursive: true, force: true})
         const htmlFullPath = path.join(projectDir, htmlFileName);
 
         fsPromise.writeFile(htmlFullPath, data);
-      })
+      });
   })
   .catch((err) => console.log(err));
