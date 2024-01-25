@@ -108,7 +108,7 @@ fsPromise
         let htmlContent = data;
 
         Object.keys(componentFilesContent).forEach((item) => {
-          htmlContent = htmlContent.replace(
+          htmlContent = htmlContent.replaceAll(
             `{{${item}}}`,
             componentFilesContent[item],
           );
