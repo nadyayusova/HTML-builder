@@ -17,7 +17,7 @@ process.on('SIGINT', function () {
 });
 
 stdin.on('data', (data) => {
-  if (data.toString().trim().slice(0, 4).toLowerCase() === 'exit') {
+  if (data.toString().trim().toLowerCase() === 'exit') {
     process.exit(0);
   }
 
